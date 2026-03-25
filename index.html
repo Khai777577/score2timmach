@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>SCORE2 & SCORE2-OP - Khoa Nội Tim mạch</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f4f8; padding: 15px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        h2 { color: #d32f2f; text-align: center; text-transform: uppercase; margin-bottom: 5px; }
+        .sub-title { text-align: center; color: #666; margin-bottom: 20px; font-style: italic; }
+        .grid-input { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .input-box { background: #f9f9f9; padding: 12px; border-radius: 8px; border: 1px solid #ddd; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; color: #333; font-size: 14px; }
+        select, input { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box; }
+        .btn-calc { background: #d32f2f; color: white; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; border-radius: 8px; font-size: 18px; margin-top: 20px; }
+        
+        #resultArea { margin-top: 25px; display: none; }
+        .risk-header { padding: 15px; border-radius: 10px; text-align: center; color: white; margin-bottom: 20px; }
+        .low { background: #2e7d32; } .mod { background: #ef6c00; } .high { background: #c62828; }
+        .treatment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
+        .treatment-card { background: #fff; border: 1px solid #eee; padding: 15px; border-radius: 10px; border-top: 4px solid #d32f2f; }
+        .treatment-card h4 { color: #d32f2f; margin: 0 0 10px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        ul { padding-left: 18px; font-size: 13px; margin: 5px 0; }
+        .auto-calc { color: #1a73e8; font-weight: bold; font-size: 12px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>DỰ BÁO NGUY CƠ & PHÁC ĐỒ ĐIỀU TRỊ</h2>
+    <div class="sub-title">BVĐK Đầm Dơi | Hỗ trợ tính toán SCORE2 & SCORE2-OP</div>
+
+    <div class="grid-input">
+        <div class="input-box"><label>Tuổi:</label><input type="number" id="age" placeholder="40-89"></div>
+        <div class="input-box"><label>Giới tính:</label><select id="gender"><option value="male">Nam</option><option value="female">Nữ</option></select></div>
+        <div class="input-box"><label>HA tâm thu (mmHg):</label><input type="number" id="sbp"></div>
+        <div class="input-box">
+            <label>Cholesterol TP (mmol/L):</label>
+            <input type="number" id="totalChol" step="0.1" oninput="autoCalcNonHDL()">
+        </div>
+        <div class="input-box">
+            <label>HDL-C (mmol/L):</label>
+            <input type="number" id="hdl" step="0.1" oninput="autoCalcNonHDL()">
+        </div>
+        <div class="input-box">
+            <label>Non-HDL (Tự tính):</label>
+            <input type="number" id="nonHdl" step="0.1" readonly style="background:#e9ecef;">
+            <div class="auto-calc" id="calcNote">Chưa đủ dữ liệu</div>
+        </div>
+        <div class="input-box"><label>Hút thuốc:</label><select id="smoker"><option value="0">Không</option><option value="1">Có</option></select></div>
+        <div class="input-box"><label>Đái tháo đường:</label><select id="diabetes"><option value="0">Không</option><option value="1">Có</option></select></div>
+    </div>
+
+    <button class="btn-calc" onclick="calculate()">PHÂN TÍCH ĐIỀU TRỊ</button>
+
+    <div id="resultArea">
+        <div id="riskHeader" class="risk-header">
+            <h3 id="riskLabel"></h3>
+            <div id="riskValue" style="font-size: 30px; font-weight: bold;"></div>
+        </div>
+        <div class="treatment-grid">
+            <div class="treatment-card">
+                <h4>🍎 Lối sống (DASH)</h4>
+                <ul>
+                    <li>Muối < 5g/ngày.</li>
+                    <li>Rau quả > 400g/ngày.</li>
+                    <li>Vận động > 150p/tuần.</li>
+                    <li>Vòng bụng: Nam < 90cm, Nữ < 80cm.</li>
+                </ul>
+            </div>
+            <div class="treatment-card">
+                <h4>🎯 Mục tiêu con số</h4>
+                <ul id="targetList"></ul>
+            </div>
+            <div class="treatment-card">
+                <h4>💊 Gợi ý thuốc</h4>
+                <ul id="medList"></ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function autoCalcNonHDL() {
+        const tc = parseFloat(document.getElementById('totalChol').value);
+        const hdl = parseFloat(document.getElementById('hdl').value);
+        const nonHdlInput = document.getElementById('nonHdl');
+        const note = document.getElementById('calcNote');
+
+        if (tc && hdl) {
+            const val = (tc - hdl).toFixed(1);
+            nonHdlInput.value = val;
+            note.innerText = "Đã tính (TC - HDL)";
+            note.style.color = "#2e7d32";
+        } else {
+            nonHdlInput.value = "";
+            note.innerText = "Nhập TC và HDL để tự tính";
+            note.style.color = "#d32f2f";
+        }
+    }
+
+    function calculate() {
+        const age = parseInt(document.getElementById('age').value);
+        const sbp = parseInt(document.getElementById('sbp').value);
+        const nonHdl = parseFloat(document.getElementById('nonHdl').value);
+        const isSmoker = document.getElementById('smoker').value === "1";
+        const hasDb = document.getElementById('diabetes').value === "1";
+
+        if (!age || !sbp || !nonHdl) { alert("Bác sĩ vui lòng nhập đủ Tuổi, HA và Cholesterol!"); return; }
+
+        let score = (age < 70) ? (sbp > 145 ? 9 : 5) : (sbp > 145 ? 17 : 11);
+        if (isSmoker) score += 5;
+        if (hasDb) score += 6;
+        if (nonHdl > 4.5) score += 3;
+
+        const header = document.getElementById('riskHeader');
+        document.getElementById('resultArea').style.display = "block";
+        document.getElementById('riskValue').innerText = score + "%";
+
+        let threshold = (age < 50) ? [2.5, 7.5] : (age < 70 ? [5, 10] : [7.5, 15]);
+        let ldl = "2.6", statin = "Chưa cần", med = "Lối sống";
+
+        if (score < threshold[0]) {
+            header.className = "risk-header low"; 
+            document.getElementById('riskLabel').innerText = "NGUY CƠ THẤP-TRUNG BÌNH";
+        } else if (score < threshold[1]) {
+            header.className = "risk-header mod"; 
+            document.getElementById('riskLabel').innerText = "NGUY CƠ CAO";
+            ldl = "1.8"; statin = "Statin TB"; med = "Atorva 10-20mg";
+        } else {
+            header.className = "risk-header high"; 
+            document.getElementById('riskLabel').innerText = "NGUY CƠ RẤT CAO";
+            ldl = "1.4"; statin = "Statin CAO"; med = "Atorva 40mg";
+        }
+
+        document.getElementById('targetList').innerHTML = `
+            <li>HA: < 130/80 mmHg.</li>
+            <li>LDL-C: < <b>${ldl} mmol/L</b>.</li>
+            <li>Non-HDL: < ${parseFloat(ldl) + 0.8} mmol/L.</li>
+            ${hasDb ? "<li>HbA1c: < 7.0%.</li>" : ""}
+        `;
+        document.getElementById('medList').innerHTML = `
+            <li>Lipid: ${statin}.</li>
+            <li>Gợi ý: ${med}.</li>
+            <li>Ưu tiên ACEi/ARB nếu có ĐTĐ.</li>
+        `;
+    }
+</script>
+</body>
+</html>
