@@ -1,0 +1,66 @@
+import streamlit as st
+
+# Thiết lập giao diện trang web
+st.set_page_config(page_title="SCORE2 - BV Đầm Dơi", layout="centered")
+
+# Header đơn vị
+st.markdown("<h2 style='text-align: center; color: blue;'>KHOA NỘI TIM MẠCH - LÃO HỌC</h2>", unsafe_allow_status=True)
+st.markdown("<h3 style='text-align: center; color: blue;'>BỆNH VIỆN ĐA KHOA ĐẦM DƠI</h3>", unsafe_allow_status=True)
+st.divider()
+
+# Nhập liệu
+st.subheader("🛠 CÔNG CỤ TÍNH TOÁN")
+col1, col2 = st.columns(2)
+
+with col1:
+    ten = st.text_input("Tên bệnh nhân")
+    tuoi = st.number_input("Độ tuổi", min_value=40, max_value=89, value=50)
+    gioi_tinh = st.selectbox("Giới tính", ["Nam", "Nữ"])
+    hut_thuoc = st.selectbox("Hút thuốc lá", ["Không", "Có"])
+
+with col2:
+    sbp = st.number_input("Huyết áp tâm thu (mmHg)", min_value=100, max_value=200, value=120)
+    don_vi = st.radio("Đơn vị Cholesterol", ["mmol/L", "mg/dL"])
+    cho_tp = st.number_input("Cholesterol toàn phần", value=5.0)
+    hdl_c = st.number_input("HDL-C", value=1.2)
+
+# Nhập điểm % tra bảng
+score_val = st.number_input("Tỷ lệ % SCORE2 (Tra bảng màu ESC)", min_value=0.0, max_value=100.0, step=0.1)
+
+# Tính toán Non-HDL
+non_hdl = cho_tp - hdl_c
+
+if st.button("THỰC HIỆN TÍNH TOÁN", type="primary"):
+    # Phân tầng nguy cơ
+    if tuoi < 50:
+        if score_val < 2.5: risk = "Thấp đến trung bình"
+        elif score_val < 7.5: risk = "Cao"
+        else: risk = "Rất cao"
+    elif 50 <= tuoi < 70:
+        if score_val < 5: risk = "Thấp đến trung bình"
+        elif score_val < 10: risk = "Cao"
+        else: risk = "Rất cao"
+    else: # >= 70
+        if score_val < 7: risk = "Thấp đến trung bình"
+        elif score_val < 15: risk = "Cao"
+        else: risk = "Rất cao"
+
+    # Mục tiêu
+    target_sbp = "130-140 mmHg" if tuoi >= 70 else "< 130 mmHg"
+    if risk == "Rất cao": target_ldl = "< 1.4 mmol/L (55 mg/dL)"
+    elif risk == "Cao": target_ldl = "< 1.8 mmol/L (70 mg/dL)"
+    else: target_ldl = "< 2.6 mmol/L (100 mg/dL)"
+
+    # Hiển thị kết quả
+    st.success(f"### KẾT QUẢ: {risk.upper()}")
+    st.write(f"**Bệnh nhân:** {ten}")
+    st.write(f"**Chỉ số Non-HDL:** {non_hdl:.2f} {don_vi}")
+    
+    st.info("🎯 **MỤC TIÊU ĐIỀU TRỊ**")
+    st.write(f"- **Huyết áp tâm thu:** {target_sbp}")
+    st.write(f"- **LDL-C mục tiêu:** {target_ldl}")
+    
+    st.warning("⚠️ **HƯỚNG XỬ TRÍ**")
+    st.write("- Thay đổi lối sống: Giảm muối, tập thể dục, ngưng thuốc lá.")
+    if risk != "Thấp đến trung bình":
+        st.write("- **Xem xét khởi đầu STATIN ngay.**")
