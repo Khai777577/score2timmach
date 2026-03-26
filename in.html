@@ -9,7 +9,7 @@ st.markdown("<h3 style='text-align: center; color: blue;'>BỆNH VIỆN ĐA KHOA
 st.divider()
 
 # Nhập liệu
-st.subheader("🛠 CÔNG CỤ TÍNH TOÁN")
+st.subheader("🛠 1. CÔNG CỤ TÍNH TOÁN NGUY CƠ")
 col1, col2 = st.columns(2)
 
 with col1:
@@ -25,13 +25,13 @@ with col2:
     hdl_c = st.number_input("HDL-C", value=1.2)
 
 # Nhập điểm % tra bảng
-score_val = st.number_input("Tỷ lệ % SCORE2 (Tra bảng màu ESC)", min_value=0.0, max_value=100.0, step=0.1)
+score_val = st.number_input("Tỷ lệ % SCORE2/SCORE2-OP (Tra bảng màu ESC)", min_value=0.0, max_value=100.0, step=0.1)
 
 # Tính toán Non-HDL
 non_hdl = cho_tp - hdl_c
 
-if st.button("THỰC HIỆN TÍNH TOÁN", type="primary"):
-    # Phân tầng nguy cơ
+if st.button("THỰC HIỆN TÍNH TOÁN & TRA CỨU HƯỚNG DẪN", type="primary"):
+    # PHẦN 1: PHÂN TẦNG NGUY CƠ
     if tuoi < 50:
         if score_val < 2.5: risk = "Thấp đến trung bình"
         elif score_val < 7.5: risk = "Cao"
@@ -40,27 +40,83 @@ if st.button("THỰC HIỆN TÍNH TOÁN", type="primary"):
         if score_val < 5: risk = "Thấp đến trung bình"
         elif score_val < 10: risk = "Cao"
         else: risk = "Rất cao"
-    else: # >= 70
+    else: # >= 70 (Dùng SCORE2-OP)
         if score_val < 7: risk = "Thấp đến trung bình"
         elif score_val < 15: risk = "Cao"
         else: risk = "Rất cao"
 
-    # Mục tiêu
-    target_sbp = "130-140 mmHg" if tuoi >= 70 else "< 130 mmHg"
-    if risk == "Rất cao": target_ldl = "< 1.4 mmol/L (55 mg/dL)"
-    elif risk == "Cao": target_ldl = "< 1.8 mmol/L (70 mg/dL)"
-    else: target_ldl = "< 2.6 mmol/L (100 mg/dL)"
+    # PHẦN 2: MỤC TIÊU ĐIỀU TRỊ (Cá thể hóa theo nguy cơ và độ tuổi)
+    # 2.1 Huyết áp
+    if tuoi >= 70:
+        target_sbp = "130 - 140 mmHg (nếu dung nạp được)"
+    else:
+        target_sbp = "< 130 mmHg (nếu dung nạp được, nhưng không dưới 120 mmHg)"
 
-    # Hiển thị kết quả
-    st.success(f"### KẾT QUẢ: {risk.upper()}")
-    st.write(f"**Bệnh nhân:** {ten}")
-    st.write(f"**Chỉ số Non-HDL:** {non_hdl:.2f} {don_vi}")
+    # 2.2 Lipid (LDL-C)
+    if risk == "Rất cao":
+        target_ldl = "< 1.4 mmol/L (55 mg/dL) và giảm ít nhất 50% so với mức nền"
+    elif risk == "Cao":
+        target_ldl = "< 1.8 mmol/L (70 mg/dL) và giảm ít nhất 50% so với mức nền"
+    else: # Thấp đến trung bình
+        target_ldl = "< 2.6 mmol/L (100 mg/dL)"
+
+    # Hiển thị kết quả tính toán
+    st.success(f"### KẾT QUẢ PHÂN TẦNG: {risk.upper()}")
+    st.write(f"**Bệnh nhân:** {ten if ten else '[Chưa nhập tên]'}")
+    st.write(f"**Chỉ số Non-HDL tính toán:** {non_hdl:.2f} {don_vi}")
     
-    st.info("🎯 **MỤC TIÊU ĐIỀU TRỊ**")
+    st.info("🎯 **2. MỤC TIÊU ĐIỀU TRỊ (Cá thể hóa)**")
     st.write(f"- **Huyết áp tâm thu:** {target_sbp}")
     st.write(f"- **LDL-C mục tiêu:** {target_ldl}")
     
-    st.warning("⚠️ **HƯỚNG XỬ TRÍ**")
-    st.write("- Thay đổi lối sống: Giảm muối, tập thể dục, ngưng thuốc lá.")
+    st.divider()
+
+    # PHẦN 3: LỜI KHUYÊN CHUNG VỀ LỐI SỐNG LÀNH MẠNH
+    # (Trích xuất từ hình ảnh image_4.png và image_6.png)
+    st.subheader("🥗 3. LỜI KHUYÊN VỀ LỐI SỐNG LÀNH MẠNH")
+    st.markdown("""
+    1.  **Hoạt động thể chất:**
+        * Tập thể dục aerobic cường độ vừa/thấp: Ít nhất **150 phút/tuần** (tương đương 30 phút, 5-7 ngày/tuần, ví dụ: đi bộ, đạp xe).
+        * *Hoặc thay thế bằng:* 75 phút tập cường độ mạnh/tuần, chia ra 3 ngày (ví dụ: chạy bộ).
+        * Khuyến khích kết hợp với các bài tập kháng lực (2-3 lần/tuần) để giúp giảm huyết áp và nguy cơ mắc bệnh tim mạch nhưng phải bảo đảm an toàn.
+    2.  **Kiểm soát cân nặng:**
+        * Giảm cân nếu thừa cân (BMI ≥ 25 kg/m²).
+        * Mục tiêu: **BMI 20 - 25 kg/m²**, vòng eo ở nam < 94cm và nữ < 80cm.
+    3.  **Chế độ ăn uống:** Ăn nhiều rau, trái cây, chất xơ, ngũ cốc nguyên hạt, bánh mì, cá (đặc biệt là cá nhiều dầu), thịt xay, sữa ít béo. Khuyến khích chế độ ăn DASH.
+    4.  **Tránh muối:** Hạn chế muối **< 5g/ngày** (khoảng 1 muỗng cà phê muối hoặc 2g natri), đặc biệt lưu ý muối trong thực phẩm chế biến sẵn.
+    5.  **Hạn chế chất béo:** Tránh ăn nhiều mỡ động vật.
+    6.  **Thuốc lá:** Tuyệt đối không hút thuốc lá, tránh xa khói thuốc lá.
+    7.  **Rượu bia:** Hạn chế rượu bia. Khuyến khích < 200g rượu/tuần, lý tưởng là ngưng hoàn toàn.
+    8.  **Giảm stress:** Tránh lối sống tĩnh tại. Khuyến khích các hoạt động thư giãn như thiền, yoga, các bài tập thở.
+    9.  **Vấn đề khác:** Tránh thực phẩm có đường đặc biệt; Sống trong môi trường tốt, không ô nhiễm không khí và tiếng ồn.
+    """)
+
+    # PHẦN 4: LỜI KHUYÊN ĐIỀU TRỊ TĂNG CƯỜNG
+    # (Dựa trên hình ảnh image_5.png và nguy cơ cá thể hóa)
     if risk != "Thấp đến trung bình":
-        st.write("- **Xem xét khởi đầu STATIN ngay.**")
+        st.divider()
+        st.subheader("💊 4. LỜI KHUYÊN ĐIỀU TRỊ TĂNG CƯỜNG")
+        st.warning("**Lưu ý:** Kế hoạch điều trị luôn bắt đầu nền tảng thay đổi lối sống đã được chứng minh hạ áp/hạ lipid hình.")
+        
+        # 4.1 Điều trị Lipid
+        st.write("#### **Về kiểm soát Lipid (Statin):**")
+        st.write("- Quản lý các yếu tố nguy cơ cụ thể của người bệnh.")
+        st.write("- **Cân nhắc Statin:** Xem xét bắt đầu điều trị bằng statin để phòng đạt bước đầu tiên (Loại IIb-B).")
+        
+        # Lưu ý đặc biệt cho người cao tuổi (image_5.pngIC)
+        if tuoi >= 70:
+            st.markdown("""
+            * **Khuyến khích bác sĩ:** Khuyến khích bắt đầu sử dụng statin ở **mức thấp** mặc dù có suy nghĩ đáng kể về việc bệnh nhân 'già yếu' và/hoặc khả năng **tương tác thuốc** (IC).
+            """)
+
+        # 4.2 Điều trị Huyết áp
+        if sbp >= 140:
+            st.write("#### **Về kiểm soát Huyết áp:**")
+            st.write(f"- Bệnh nhân có HATT là {sbp} mmHg (≥ 140 mmHg).")
+            st.write("- Xem xét khởi đầu liệu pháp kết hợp thuốc hạ áp ngay (kết hợp với thay đổi lối sống) để đạt mục tiêu.")
+
+    else: # Nguy cơ thấp đến trung bình
+        st.divider()
+        st.subheader("🔄 4. THEO DÕI")
+        st.info("- Tập trung vào thay đổi lối sống tích cực.")
+        st.write("- Hẹn tái khám và đánh giá lại SCORE2 sau 1 - 2 năm hoặc khi có thay đổi sức khỏe.")
